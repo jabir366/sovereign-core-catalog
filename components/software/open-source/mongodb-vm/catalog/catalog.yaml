@@ -1,11 +1,11 @@
 name: MongoDB Enterprise Advanced VM
 metadata:
-  name: mongodb-vm-helm-git
+  name: mongodb-vm-helm-registry
   namespace: byop-broker
 spec:
   productId: mongodb-vm
-  sourceType: helm-git
-  repoURL: git@github.ibm.com:sovcore/sovcore-placeholder.git
+  sourceType: helm-registry
+  registry: oci://quay.io/jabirali/mongodb-vm
   version: "1.0.0"
   catalogRegistration:
     displayName: MongoDB Enterprise Advanced VM
