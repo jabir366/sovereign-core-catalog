@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "MongoDB Enterprise Advanced VM Instance Parameters",
+  "description": "Parameters for provisioning a MongoDB Enterprise Advanced 8.3.2 VM instance on IBM Z (s390x)",
+  "properties": {
+    "cluster_url": {
+      "type": "string",
+      "description": "Target cluster server URL (optional, defaults to broker's cluster). Must be a registered ArgoCD cluster.",
+      "format": "uri",
+      "pattern": "^https://.*",
+      "examples": [
+        "https://kubernetes.default.svc",
+        "https://192.168.2.89:6443"
+      ]
+    },
+    "database_name": {
+      "type": "string",
+      "description": "Name of the application database to create",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "minLength": 1,
+      "maxLength": 64,
+      "default": "appdb",
+      "examples": ["appdb", "orders", "catalog"]
+    },
+    "database_user": {
+      "type": "string",
+      "description": "Application database username",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "minLength": 1,
+      "maxLength": 32,
+      "default": "appuser",
+      "examples": ["appuser", "dbuser"]
+    },
+    "database_password": {
+      "type": "string",
+      "description": "Application database user password (auto-generated if not provided)",
+      "minLength": 8,
+      "maxLength": 128,
+      "examples": ["SecureDbP@ss123"],
+      "x-generate": {
+        "type": "password",
+        "length": 24,
+        "include": "alphanumeric-symbols"
+      }
+    },
+    "root_password": {
+      "type": "string",
+      "description": "MongoDB root admin password (auto-generated if not provided)",
+      "minLength": 12,
+      "maxLength": 128,
+      "examples": ["VerySecureR00tP@ss"],
+      "x-generate": {
+        "type": "password",
+        "length": 32,
+        "include": "alphanumeric-symbols"
+      }
+    },
+    "vm_root_password": {
+      "type": "string",
+      "description": "VM OS root password (auto-generated if not provided)",
+      "minLength": 8,
+      "maxLength": 128,
+      "examples": ["VMOsRootP@ssw0rd"],
+      "x-generate": {
+        "type": "password",
+        "length": 24,
+        "include": "alphanumeric-symbols"
+      }
+    },
+    "source_container_disk": {
+      "type": "string",
+      "description": "Full MongoDB EA s390x VM container disk image reference, including registry, repository, and tag",
+      "default": "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x",
+      "examples": [
+        "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x"
+      ]
+    },
+    "ha_enabled": {
+      "type": "boolean",
+      "description": "Enable High Availability replica set deployment",
+      "default": false
+    },
+    "ha_replica_count": {
+      "type": "integer",
+      "description": "Number of replica set members for High Availability (must be odd: 3, 5, or 7)",
+      "minimum": 1,
+      "maximum": 7,
+      "default": 3,
+      "examples": [3, 5]
+    },
+    "ha_replica_set_name": {
+      "type": "string",
+      "description": "MongoDB replica set name",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+      "minLength": 1,
+      "maxLength": 32,
+      "default": "rs0",
+      "examples": ["rs0", "mongo-rs"]
+    },
+    "vm_cpu_cores": {
+      "type": "integer",
+      "description": "Number of vCPU cores per VM",
+      "minimum": 1,
+      "maximum": 16,
+      "default": 2,
+      "examples": [2, 4, 8]
+    },
+    "vm_memory_gi": {
+      "type": "integer",
+      "description": "Memory per VM in GiB",
+      "minimum": 2,
+      "maximum": 64,
+      "default": 4,
+      "examples": [4, 8, 16]
+    },
+    "disk_size_gi": {
+      "type": "integer",
+      "description": "Boot disk size per VM in GiB",
+      "minimum": 20,
+      "maximum": 500,
+      "default": 25,
+      "examples": [25, 50, 100]
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}
