@@ -17,7 +17,7 @@ spec:
       - id: ha
         name: High Availability
         description: MongoDB EA 8.3.2 Replica Set on s390x (3 VMs, 2 vCPU / 4 Gi RAM / 25 Gi disk each) with pod anti-affinity
-    category: databases
+    category: other 
     tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise, OCPVirt, VirtualMachine, s390x]
     supportUrl: https://www.ibm.com
     marketingUrl: https://www.ibm.com/products/sovereign-core
