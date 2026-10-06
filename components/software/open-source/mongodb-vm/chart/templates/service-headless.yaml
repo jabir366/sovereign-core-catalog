@@ -1,0 +1,27 @@
+{{- if .Values.ha.enabled }}
+{{- /*
+  Headless service — required for stable per-member DNS in HA mode.
+  Each member is addressable at:
+    <fullname>-<i>.<fullname>-headless.<namespace>.svc.cluster.local
+  This is what mongo-rs-init.sh uses to call rs.initiate() with all hostnames.
+*/ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mongodb-vm.headlessSvcName" . }}
+  namespace: {{ .Values.namespaceOverride | default .Release.Namespace }}
+  labels:
+    {{- include "mongodb-vm.labels" . | nindent 4 }}
+  annotations:
+    {{- include "mongodb-vm.annotations" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: {{ include "mongodb-vm.fullname" . }}
+  ports:
+    - name: mongodb
+      port: {{ .Values.ha.port }}
+      targetPort: {{ .Values.ha.port }}
+      protocol: TCP
+{{- end }}

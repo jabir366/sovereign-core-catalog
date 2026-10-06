@@ -1,0 +1,61 @@
+# Helm values override for MongoDB EA VM instance
+namespaceOverride: {{ namespace }}
+
+commonLabels:
+  app: mongodb-vm
+  service-type: mongodb-vm
+
+commonAnnotations:
+  sovcore.byop.ibm.com/crn: {{ context.crn | default("crn:unknown") | yaml_safe }}
+  sovcore.byop.ibm.com/account-id: {{ context.account_id | default("unknown") | yaml_safe }}
+  sovcore.byop.ibm.com/sub-account-id: {{ context.sub_account_id | default("unknown") | yaml_safe }}
+  sovcore.byop.ibm.com/platform: {{ context.platform | default("unknown") | yaml_safe }}
+
+instance:
+  name: {{ instance_name }}
+  id: "{{ instance_id }}"
+  environment: {{ environment }}
+  clusterName: "{{ cluster_name }}"
+
+imagePullSecrets:
+{% if image_pull_secret_name %}
+  - name: {{ image_pull_secret_name }}
+{% else %}
+  []
+{% endif %}
+
+diskImage:
+  sourceContainerDisk: {{ spec.source_container_disk | default("registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x") | yaml_safe }}
+  sourceURL: ""
+  sourcePVCName: ""
+  sourcePVCNamespace: ""
+  pullSecret: "quay-pull-secret"
+  certConfigMap: "quay-ca-bundle"
+  storageClassName: "ocs-storagecluster-ceph-rbd-virtualization"
+  diskSizeGi: {{ spec.disk_size_gi | default(25) }}
+
+vm:
+  cpuCores: {{ spec.vm_cpu_cores | default(2) }}
+  memoryGi: {{ spec.vm_memory_gi | default(4) }}
+  machineType: s390-ccw-virtio
+
+mongodb:
+  rootPassword: {{ spec.root_password | yaml_safe }}
+  databaseName: {{ spec.database_name | default("appdb") | yaml_safe }}
+  databaseUser: {{ spec.database_user | default("appuser") | yaml_safe }}
+  databasePassword: {{ spec.database_password | yaml_safe }}
+  vmRootPassword: {{ spec.vm_root_password | yaml_safe }}
+
+ha:
+  enabled: {{ spec.ha_enabled | default(false) }}
+  replicaCount: {{ spec.ha_replica_count | default(3) }}
+  replicaSetName: {{ spec.ha_replica_set_name | default("rs0") | yaml_safe }}
+  port: 27017
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 27017
+
+argocd:
+  grantAdminRole: true
