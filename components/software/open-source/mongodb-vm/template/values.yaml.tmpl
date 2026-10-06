@@ -25,7 +25,7 @@ imagePullSecrets:
 {% endif %}
 
 diskImage:
-  sourceContainerDisk: {{ spec.source_container_disk | default("registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x") | yaml_safe }}
+  sourceContainerDisk: {{ spec.source_container_disk | default("") | yaml_safe }}
   sourceURL: ""
   sourcePVCName: ""
   sourcePVCNamespace: ""
