@@ -34,17 +34,16 @@ spec:
     kmsIntegration: false
   deployment:
     type: "Helm"
-    repository: "git@github.ibm.com:sovcore/sovcore-placeholder.git"
+    repository: "oci://quay.io/jabirali/mongodb-vm:1.0.0"
   catalog:
     brokerType: "platform"
-    sourceType: "helm-git"
+    sourceType: "helm-registry"
+    sourceRepo: "oci://quay.io/jabirali/mongodb-vm"
     name: "mongodb-vm"
-    images:
-      - source: "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x"
-        destination: "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
 brokerType: "platform"
-sourceType: "helm-git"
+sourceType: "helm-registry"
+sourceRepo: "oci://quay.io/jabirali/mongodb-vm"
 name: "mongodb-vm"
