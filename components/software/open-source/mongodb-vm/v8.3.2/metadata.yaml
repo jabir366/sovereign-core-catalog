@@ -34,16 +34,16 @@ spec:
     kmsIntegration: false
   deployment:
     type: "Helm"
-    repository: "oci://quay.io/jabirali/mongodb-vm:1.0.0"
+    repository: "oci://quay.io/mongodbhelm/mongodb-vm:1.0.0"
   catalog:
     brokerType: "platform"
     sourceType: "helm-registry"
-    sourceRepo: "oci://quay.io/jabirali/mongodb-vm"
+    sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
     name: "mongodb-vm"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
 brokerType: "platform"
 sourceType: "helm-registry"
-sourceRepo: "oci://quay.io/jabirali/mongodb-vm"
+sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
 name: "mongodb-vm"
