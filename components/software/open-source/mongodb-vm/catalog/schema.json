@@ -71,7 +71,6 @@
     "source_container_disk": {
       "type": "string",
       "description": "Full MongoDB EA s390x VM container disk image reference, including registry, repository, and tag",
-      "default": "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x",
       "examples": [
         "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-s390x/mongodb-ea-rhel9:8.3.2-s390x"
       ]
