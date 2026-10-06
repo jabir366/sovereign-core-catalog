@@ -1,0 +1,3 @@
+sourceType: helm-registry
+sourceRepo: oci://quay.io/jabirali/mongodb-vm
+name: mongodb-vm
