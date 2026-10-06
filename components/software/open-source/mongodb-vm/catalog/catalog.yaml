@@ -1,24 +1,14 @@
-name: MongoDB Enterprise Advanced VM
-metadata:
-  name: mongodb-vm-helm-registry
-  namespace: byop-broker
-spec:
-  productId: mongodb-vm
-  sourceType: helm-registry
-  registry: oci://quay.io/jabirali/mongodb-vm
-  version: "1.0.0"
-  catalogRegistration:
-    displayName: MongoDB Enterprise Advanced VM
-    description: MongoDB Enterprise Advanced 8.3.2 deployed as an OCP Virt VirtualMachine on IBM Z (s390x) with standalone and High Availability replica set plans
-    plans:
-      - id: standard
-        name: Standard
-        description: Standalone MongoDB EA 8.3.2 VM on s390x (2 vCPU, 4 Gi RAM, 25 Gi disk)
-      - id: ha
-        name: High Availability
-        description: MongoDB EA 8.3.2 Replica Set on s390x (3 VMs, 2 vCPU / 4 Gi RAM / 25 Gi disk each) with pod anti-affinity
-    category: other 
-    tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise, OCPVirt, VirtualMachine, s390x]
-    supportUrl: https://www.ibm.com
-    marketingUrl: https://www.ibm.com/products/sovereign-core
-    provisioningDurationMinutes: 15
+name: mongodb-vm
+display_name: MongoDB Enterprise Advanced VM
+description: MongoDB Enterprise Advanced 8.3.2 deployed as an OCP Virt VirtualMachine on IBM Z (s390x) with standalone and High Availability replica set plans
+category: databases
+tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise]
+support_url: https://www.ibm.com
+marketing_url: https://www.ibm.com/products/sovereign-core
+plans:
+  - id: standard
+    name: Standard
+    description: Standalone MongoDB EA 8.3.2 VM on s390x (2 vCPU, 4 Gi RAM, 25 Gi disk)
+  - id: ha
+    name: High Availability
+    description: MongoDB EA 8.3.2 Replica Set on s390x (3 VMs, 2 vCPU / 4 Gi RAM / 25 Gi disk each) with pod anti-affinity
