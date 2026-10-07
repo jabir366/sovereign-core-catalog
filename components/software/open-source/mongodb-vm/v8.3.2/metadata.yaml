@@ -39,11 +39,11 @@ spec:
     brokerType: "platform"
     sourceType: "helm-registry"
     sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
-    name: "mongodb-vm"
+    name: "mongodbvm"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
 brokerType: "platform"
 sourceType: "helm-registry"
 sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
-name: "mongodb-vm"
+name: "mongodbvm"
