@@ -38,6 +38,12 @@ spec:
   deployment:
     type: "Helm"
     repository: "components/software/open-source/postgres-s390x/chart"
+  catalog:
+    sourceType: helm-git
+    name: postgresss390x
+    images:
+      - source: s390x/postgres:17.11
+        destination: docker.io/s390x/postgres:17.11
   links:
     docsUrl: "https://www.postgresql.org/docs/17/"
     productPageUrl: "https://www.postgresql.org"
