@@ -1,3 +1,4 @@
 sourceType: helm-registry
 sourceRepo: oci://quay.io/mongodbhelm/mongodb-vm
 name: mongodbvm
+images: []
