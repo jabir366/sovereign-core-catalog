@@ -1,107 +1,136 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "MongoDB Enterprise Advanced VM Instance Parameters",
-  "description": "Parameters for provisioning a MongoDB Enterprise Advanced 8.3.17 VM instance on IBM Z (s390x)",
+  "title": "MongoDB EA VM Instance Parameters",
   "properties": {
-    "source_container_disk": {
+    "instanceName": {
       "type": "string",
-      "description": "Full MongoDB EA s390x VM container disk image reference (registry/repo:tag). Required.",
-      "examples": [
-        "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.17-s390x"
-      ]
+      "pattern": "^[a-z0-9][a-z0-9\\-]*$",
+      "minLength": 1
     },
-    "database_name": {
+    "clusterTarget": {
+      "type": "string"
+    },
+    "namespace": {
       "type": "string",
-      "description": "Name of the application database to create",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
-      "minLength": 1,
-      "maxLength": 64,
-      "default": "appdb"
+      "pattern": "^[a-z0-9][a-z0-9\\-]*$",
+      "minLength": 1
     },
-    "database_user": {
+    "container_disk_image": {
       "type": "string",
-      "description": "Application database username",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
-      "minLength": 1,
-      "maxLength": 32,
-      "default": "appuser"
+      "minLength": 1
     },
-    "ha_enabled": {
-      "type": "boolean",
-      "description": "Enable High Availability replica set deployment (3-member RS)",
-      "default": false
-    },
-    "ha_replica_count": {
-      "type": "integer",
-      "description": "Number of replica set members (must be odd: 3, 5, or 7)",
-      "minimum": 1,
-      "maximum": 7,
-      "default": 3
-    },
-    "ha_replica_set_name": {
-      "type": "string",
-      "description": "MongoDB replica set name",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
-      "default": "rs0"
-    },
-    "vm_cpu_cores": {
-      "type": "integer",
-      "description": "Number of vCPU cores per VM",
-      "minimum": 1,
-      "maximum": 16,
-      "default": 2
-    },
-    "vm_memory_gi": {
-      "type": "integer",
-      "description": "Memory per VM in GiB",
-      "minimum": 2,
-      "maximum": 64,
-      "default": 4
+    "storage_class_name": {
+      "type": "string"
     },
     "disk_size_gi": {
       "type": "integer",
-      "description": "Boot disk size per VM in GiB",
       "minimum": 20,
-      "maximum": 500,
-      "default": 25
+      "maximum": 500
     },
-    "storage_class_name": {
+    "database_name": {
       "type": "string",
-      "description": "Storage class for the VM boot PVC (must support RWO block on s390x)",
-      "default": "ocs-storagecluster-ceph-rbd-virtualization"
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "minLength": 1
+    },
+    "database_user": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+      "minLength": 1
+    },
+    "vm_cpu_cores": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "vm_memory_gi": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 64
+    },
+    "ha_enabled": {
+      "type": "boolean"
+    },
+    "ha_replica_count": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 7
+    },
+    "ha_replica_set_name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
     },
     "vip_enabled": {
-      "type": "boolean",
-      "description": "Enable VIP LoadBalancer service for primary-only HA access",
-      "default": false
+      "type": "boolean"
     },
     "vip_lb_type": {
-      "type": "string",
-      "description": "VIP service type: local (NodePort) or external (MetalLB LoadBalancer)",
-      "enum": ["local", "external"],
-      "default": "local"
+      "type": "string"
+    },
+    "vip_node_port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
     },
     "vip_metallb_address_pool": {
-      "type": "string",
-      "description": "MetalLB IPAddressPool name (required when vip_lb_type=external)"
+      "type": "string"
     },
     "network_policy_enabled": {
-      "type": "boolean",
-      "description": "Enable NetworkPolicy restricting MongoDB ingress/egress",
-      "default": true
+      "type": "boolean"
+    },
+    "service_account_enabled": {
+      "type": "boolean"
     },
     "compliance_enable_encryption": {
-      "type": "boolean",
-      "description": "Enable WiredTiger encryption-at-rest (requires MongoDB EA licence)",
-      "default": false
+      "type": "boolean"
     },
     "compliance_audit_log_enabled": {
-      "type": "boolean",
-      "description": "Enable MongoDB audit log (mdb-aud-01/02)",
-      "default": false
+      "type": "boolean"
+    },
+    "rsyslog_enabled": {
+      "type": "boolean"
+    },
+    "rsyslog_forwarding_enabled": {
+      "type": "boolean"
+    },
+    "rsyslog_forwarding_host": {
+      "type": "string"
+    },
+    "rsyslog_forwarding_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "rsyslog_forwarding_protocol": {
+      "type": "string"
+    },
+    "rsyslog_forwarding_format": {
+      "type": "string"
+    },
+    "rsyslog_monitor_mongod_log": {
+      "type": "boolean"
+    },
+    "rsyslog_monitor_audit_log": {
+      "type": "boolean"
+    },
+    "rsyslog_ratelimit_interval": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rsyslog_ratelimit_burst": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "rsyslog_custom_conf": {
+      "type": "string"
     }
   },
-  "required": ["source_container_disk", "database_name", "ha_enabled"],
-  "additionalProperties": false
+  "required": [
+    "instanceName",
+    "clusterTarget",
+    "namespace",
+    "container_disk_image",
+    "database_name",
+    "database_user",
+    "ha_enabled"
+  ]
 }
