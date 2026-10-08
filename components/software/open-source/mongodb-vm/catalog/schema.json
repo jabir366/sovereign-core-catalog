@@ -2,13 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "MongoDB Enterprise Advanced VM Instance Parameters",
-  "description": "Parameters for provisioning a MongoDB Enterprise Advanced 8.3.2 VM instance on IBM Z (s390x)",
+  "description": "Parameters for provisioning a MongoDB Enterprise Advanced 8.3.17 VM instance on IBM Z (s390x)",
   "properties": {
-    "cluster_url": {
+    "source_container_disk": {
       "type": "string",
-      "description": "Target cluster server URL (optional, defaults to broker's cluster). Must be a registered ArgoCD cluster.",
-      "format": "uri",
-      "pattern": "^https://.*"
+      "description": "Full MongoDB EA s390x VM container disk image reference (registry/repo:tag). Required.",
+      "examples": [
+        "registry-quay-quay-enterprise.apps.gori-bvt-12.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.17-s390x"
+      ]
     },
     "database_name": {
       "type": "string",
@@ -26,51 +27,14 @@
       "maxLength": 32,
       "default": "appuser"
     },
-    "database_password": {
-      "type": "string",
-      "description": "Application database user password (auto-generated if not provided)",
-      "minLength": 8,
-      "maxLength": 128,
-      "x-generate": {
-        "type": "password",
-        "length": 24,
-        "include": "alphanumeric-symbols"
-      }
-    },
-    "root_password": {
-      "type": "string",
-      "description": "MongoDB root admin password (auto-generated if not provided)",
-      "minLength": 12,
-      "maxLength": 128,
-      "x-generate": {
-        "type": "password",
-        "length": 32,
-        "include": "alphanumeric-symbols"
-      }
-    },
-    "vm_root_password": {
-      "type": "string",
-      "description": "VM OS root password (auto-generated if not provided)",
-      "minLength": 8,
-      "maxLength": 128,
-      "x-generate": {
-        "type": "password",
-        "length": 24,
-        "include": "alphanumeric-symbols"
-      }
-    },
-    "source_container_disk": {
-      "type": "string",
-      "description": "Full MongoDB EA s390x VM container disk image reference, including registry, repository, and tag"
-    },
     "ha_enabled": {
       "type": "boolean",
-      "description": "Enable High Availability replica set deployment",
+      "description": "Enable High Availability replica set deployment (3-member RS)",
       "default": false
     },
     "ha_replica_count": {
       "type": "integer",
-      "description": "Number of replica set members for High Availability (must be odd: 3, 5, or 7)",
+      "description": "Number of replica set members (must be odd: 3, 5, or 7)",
       "minimum": 1,
       "maximum": 7,
       "default": 3
@@ -79,8 +43,6 @@
       "type": "string",
       "description": "MongoDB replica set name",
       "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
-      "minLength": 1,
-      "maxLength": 32,
       "default": "rs0"
     },
     "vm_cpu_cores": {
@@ -103,8 +65,43 @@
       "minimum": 20,
       "maximum": 500,
       "default": 25
+    },
+    "storage_class_name": {
+      "type": "string",
+      "description": "Storage class for the VM boot PVC (must support RWO block on s390x)",
+      "default": "ocs-storagecluster-ceph-rbd-virtualization"
+    },
+    "vip_enabled": {
+      "type": "boolean",
+      "description": "Enable VIP LoadBalancer service for primary-only HA access",
+      "default": false
+    },
+    "vip_lb_type": {
+      "type": "string",
+      "description": "VIP service type: local (NodePort) or external (MetalLB LoadBalancer)",
+      "enum": ["local", "external"],
+      "default": "local"
+    },
+    "vip_metallb_address_pool": {
+      "type": "string",
+      "description": "MetalLB IPAddressPool name (required when vip_lb_type=external)"
+    },
+    "network_policy_enabled": {
+      "type": "boolean",
+      "description": "Enable NetworkPolicy restricting MongoDB ingress/egress",
+      "default": true
+    },
+    "compliance_enable_encryption": {
+      "type": "boolean",
+      "description": "Enable WiredTiger encryption-at-rest (requires MongoDB EA licence)",
+      "default": false
+    },
+    "compliance_audit_log_enabled": {
+      "type": "boolean",
+      "description": "Enable MongoDB audit log (mdb-aud-01/02)",
+      "default": false
     }
   },
-  "required": [],
+  "required": ["source_container_disk", "database_name", "ha_enabled"],
   "additionalProperties": false
 }

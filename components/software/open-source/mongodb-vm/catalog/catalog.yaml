@@ -1,14 +1,22 @@
-name: mongodb-vm
-display_name: MongoDB Enterprise Advanced VM
-description: MongoDB Enterprise Advanced 8.3.2 deployed as an OCP Virt VirtualMachine on IBM Z (s390x) with standalone and High Availability replica set plans
-category: databases
-tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise]
-support_url: https://www.ibm.com
-marketing_url: https://www.ibm.com/products/sovereign-core
-plans:
-  - id: standard
-    name: Standard
-    description: Standalone MongoDB EA 8.3.2 VM on s390x (2 vCPU, 4 Gi RAM, 25 Gi disk)
-  - id: ha
-    name: High Availability
-    description: MongoDB EA 8.3.2 Replica Set on s390x (3 VMs, 2 vCPU / 4 Gi RAM / 25 Gi disk each) with pod anti-affinity
+apiVersion: sovereign-catalog.io/v1alpha1
+kind: BYOPCatalogEntry
+spec:
+  catalogRegistration:
+    displayName: MongoDB Enterprise Advanced VM (s390x)
+    description: >
+      MongoDB Enterprise Advanced 8.3.17 deployed as an OCP Virt VirtualMachine
+      on IBM Z (s390x). Boot disk is a bootc-built RHEL 9 OCI-native qcow2.
+      Supports standalone and 3-member Replica Set HA deployments.
+      First-boot credential injection via cloud-init. ISCF compliance
+      controls Phase 1+2 enforced at image, chart, and runtime layers.
+    category: databases
+    tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise, s390x, IBM-Z, VM]
+    supportUrl: https://www.ibm.com
+    marketingUrl: https://www.ibm.com/products/sovereign-core
+    plans:
+      - id: standard
+        name: Standard
+        description: Standalone MongoDB EA 8.3.17 VM on s390x (2 vCPU, 4 Gi RAM, 25 Gi disk)
+      - id: ha
+        name: High Availability
+        description: MongoDB EA 8.3.17 Replica Set on s390x (3 VMs, 2 vCPU / 4 Gi RAM / 25 Gi disk each)
