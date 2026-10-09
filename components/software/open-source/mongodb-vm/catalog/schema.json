@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "MongoDB EA VM Instance Parameters",
+  "description": "Keys below (other than instanceName, clusterTarget, namespace) are passed verbatim to the mongodb-vm Helm chart as values, so they mirror chart/values.yaml.",
   "properties": {
     "instanceName": {
       "type": "string",
@@ -16,121 +17,226 @@
       "pattern": "^[a-z0-9][a-z0-9\\-]*$",
       "minLength": 1
     },
-    "container_disk_image": {
-      "type": "string",
-      "minLength": 1
+    "instance": {
+      "type": "object",
+      "description": "Resource name prefix for VMs, DataVolumes and Services (defaults to the chart name)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9\\-]*$",
+          "maxLength": 40
+        }
+      }
     },
-    "storage_class_name": {
-      "type": "string"
+    "diskImage": {
+      "type": "object",
+      "properties": {
+        "sourceContainerDisk": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ContainerDisk image reference, e.g. <registry>/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.17-s390x"
+        },
+        "pullSecret": {
+          "type": "string",
+          "description": "Secret in the instance namespace with keys accessKeyId/secretKey for the registry"
+        },
+        "certConfigMap": {
+          "type": "string",
+          "description": "ConfigMap in the instance namespace with key ca.crt for the registry CA"
+        },
+        "storageClassName": {
+          "type": "string"
+        },
+        "diskSizeGi": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 500
+        }
+      },
+      "required": ["sourceContainerDisk"]
     },
-    "disk_size_gi": {
-      "type": "integer",
-      "minimum": 20,
-      "maximum": 500
+    "vm": {
+      "type": "object",
+      "properties": {
+        "cpuCores": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "memoryGi": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 64
+        }
+      }
     },
-    "database_name": {
-      "type": "string",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
-      "minLength": 1
+    "mongodb": {
+      "type": "object",
+      "properties": {
+        "databaseName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "minLength": 1
+        },
+        "databaseUser": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+          "minLength": 1
+        }
+      },
+      "required": ["databaseName", "databaseUser"]
     },
-    "database_user": {
-      "type": "string",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
-      "minLength": 1
+    "ha": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 7
+        },
+        "replicaSetName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+        }
+      },
+      "required": ["enabled"]
     },
-    "vm_cpu_cores": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 16
+    "vip": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "lb_type": {
+          "type": "string",
+          "enum": ["local", "external"]
+        },
+        "nodePort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32767
+        },
+        "metallbAddressPool": {
+          "type": "string"
+        }
+      }
     },
-    "vm_memory_gi": {
-      "type": "integer",
-      "minimum": 2,
-      "maximum": 64
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
     },
-    "ha_enabled": {
-      "type": "boolean"
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
     },
-    "ha_replica_count": {
-      "type": "integer",
-      "minimum": 3,
-      "maximum": 7
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "enableEncryption": {
+          "type": "boolean"
+        },
+        "auditLog": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
     },
-    "ha_replica_set_name": {
-      "type": "string",
-      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
-    },
-    "vip_enabled": {
-      "type": "boolean"
-    },
-    "vip_lb_type": {
-      "type": "string"
-    },
-    "vip_node_port": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 32767
-    },
-    "vip_metallb_address_pool": {
-      "type": "string"
-    },
-    "network_policy_enabled": {
-      "type": "boolean"
-    },
-    "service_account_enabled": {
-      "type": "boolean"
-    },
-    "compliance_enable_encryption": {
-      "type": "boolean"
-    },
-    "compliance_audit_log_enabled": {
-      "type": "boolean"
-    },
-    "rsyslog_enabled": {
-      "type": "boolean"
-    },
-    "rsyslog_forwarding_enabled": {
-      "type": "boolean"
-    },
-    "rsyslog_forwarding_host": {
-      "type": "string"
-    },
-    "rsyslog_forwarding_port": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 65535
-    },
-    "rsyslog_forwarding_protocol": {
-      "type": "string"
-    },
-    "rsyslog_forwarding_format": {
-      "type": "string"
-    },
-    "rsyslog_monitor_mongod_log": {
-      "type": "boolean"
-    },
-    "rsyslog_monitor_audit_log": {
-      "type": "boolean"
-    },
-    "rsyslog_ratelimit_interval": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "rsyslog_ratelimit_burst": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "rsyslog_custom_conf": {
-      "type": "string"
+    "logging": {
+      "type": "object",
+      "properties": {
+        "rsyslog": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "forwarding": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                },
+                "protocol": {
+                  "type": "string",
+                  "enum": ["tcp", "udp"]
+                },
+                "format": {
+                  "type": "string",
+                  "enum": ["rfc3164", "rfc5424", "json"]
+                }
+              }
+            },
+            "fileMonitoring": {
+              "type": "object",
+              "properties": {
+                "mongodLog": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "auditLog": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            },
+            "rateLimit": {
+              "type": "object",
+              "properties": {
+                "intervalSeconds": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "burstCount": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "customConf": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   },
   "required": [
     "instanceName",
     "clusterTarget",
     "namespace",
-    "container_disk_image",
-    "database_name",
-    "database_user",
-    "ha_enabled"
+    "diskImage",
+    "mongodb",
+    "ha"
   ]
 }
