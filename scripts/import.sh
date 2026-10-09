@@ -1,11 +1,30 @@
 #!/usr/bin/env bash
-# import.sh <product_name>
+# import.sh <product_name> [vX.X.X] [--chart-repo oci://host/org/chart] [--chart-version X.Y.Z] [--product-id <id>]
 #
 # Imports a BYOP product from the external catalog repo into the platform:
 #   1. Sparse-clone the product directory from the external catalog repo
 #   2. Copy the helm chart to Quay (helm-registry) or the GitOps repo (helm-git)
 #   3. Mirror container images to Quay
 #   4. Create the BYOPTemplate CR
+#
+# Product directory layout expected in the catalog repo:
+#   <product>/
+#     catalog/
+#       catalog.yaml, schema.json, metrics.json
+#     template/
+#       values.yaml.tmpl
+#     vX.X.X/
+#       metadata.yaml
+#
+# If [vX.X.X] is omitted the latest version folder is selected automatically.
+#
+# Options (override values from <vX.X.X>/metadata.yaml spec.catalog):
+#   --chart-repo     helm-registry chart source, e.g. oci://quay.io/mongodbhelm/mongodb-vm
+#                    (default: spec.catalog.sourceRepo)
+#   --chart-version  chart version to pull (default: spec.catalog.sourceVersion, else latest)
+#   --product-id     product name used as BYOPTemplate productId / CR name prefix
+#                    (default: spec.catalog.name)
+# The target Quay registry is always discovered from the logged-in cluster.
 #
 # Requires: git, helm, skopeo, oc, yq (mikefarah/yq), base64
 
@@ -14,8 +33,38 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Args
 # ---------------------------------------------------------------------------
-[[ $# -lt 1 ]] && { echo "Usage: $0 <product_name>"; exit 1; }
-PRODUCT_NAME="$1"
+usage() {
+  echo "Usage: $0 <product_name> [vX.X.X] [--chart-repo oci://host/org/chart] [--chart-version X.Y.Z] [--product-id <id>]"
+  echo "  e.g. $0 mongodb-vm v8.3.17 --chart-repo oci://quay.io/mongodbhelm/mongodb-vm --chart-version 1.1.0 --product-id mongodbvm"
+  exit 1
+}
+
+PRODUCT_NAME=""
+PRODUCT_VERSION=""   # optional — resolved after clone if empty
+OPT_CHART_REPO=""
+OPT_CHART_VERSION=""
+OPT_PRODUCT_ID=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --chart-repo)    [[ $# -ge 2 ]] || usage; OPT_CHART_REPO="$2"; shift 2 ;;
+    --chart-version) [[ $# -ge 2 ]] || usage; OPT_CHART_VERSION="$2"; shift 2 ;;
+    --product-id)    [[ $# -ge 2 ]] || usage; OPT_PRODUCT_ID="$2"; shift 2 ;;
+    -h|--help)       usage ;;
+    -*)              echo "ERROR: unknown option $1"; usage ;;
+    *)
+      if   [[ -z "$PRODUCT_NAME" ]];    then PRODUCT_NAME="$1"
+      elif [[ -z "$PRODUCT_VERSION" ]]; then PRODUCT_VERSION="$1"
+      else echo "ERROR: unexpected argument $1"; usage; fi
+      shift ;;
+  esac
+done
+[[ -z "$PRODUCT_NAME" ]] && usage
+
+# Normalise chart repo to oci:// form
+if [[ -n "$OPT_CHART_REPO" && "$OPT_CHART_REPO" != oci://* ]]; then
+  OPT_CHART_REPO="oci://${OPT_CHART_REPO}"
+fi
 
 # ---------------------------------------------------------------------------
 # Load env
@@ -79,34 +128,60 @@ git -C "$CLONE_DIR" sparse-checkout init --cone
 PRODUCT_PATH="${PRODUCT_NAME}"
 [[ -n "$EXT_CATALOG_PREFIX" ]] && PRODUCT_PATH="${EXT_CATALOG_PREFIX}/${PRODUCT_NAME}"
 
+# Sparse-checkout: always fetch the full product tree so cone mode includes
+# catalog/, template/, and all vX.X.X/ subdirectories in one pass.
 git -C "$CLONE_DIR" sparse-checkout set "$PRODUCT_PATH"
 git -C "$CLONE_DIR" checkout
 
 PRODUCT_DIR="${CLONE_DIR}/${PRODUCT_PATH}"
 [[ -d "$PRODUCT_DIR" ]] || { echo "ERROR: product directory '${PRODUCT_PATH}' not found in external catalog repo"; exit 1; }
 
-# Read metadata — lives in catalog/metadata.yaml
-METADATA_FILE="${PRODUCT_DIR}/catalog/metadata.yaml"
-[[ -f "$METADATA_FILE" ]] || { echo "ERROR: catalog/metadata.yaml not found in ${PRODUCT_DIR}"; exit 1; }
+# Resolve version — use the supplied argument or pick the highest vX.X.X folder
+if [[ -z "$PRODUCT_VERSION" ]]; then
+  # Sort version folders (vMAJOR.MINOR.PATCH) and take the last (highest)
+  PRODUCT_VERSION=$(find "$PRODUCT_DIR" -maxdepth 1 -type d -name 'v*.*.*' \
+    | xargs -I{} basename {} \
+    | sort -t. -k1,1V -k2,2n -k3,3n \
+    | tail -1)
+  [[ -z "$PRODUCT_VERSION" ]] && { echo "ERROR: no vX.X.X directory found in ${PRODUCT_DIR}"; exit 1; }
+  echo "    Auto-selected version: ${PRODUCT_VERSION}"
+else
+  echo "    Using requested version: ${PRODUCT_VERSION}"
+fi
 
-SOURCE_TYPE=$(yq '.sourceType' "$METADATA_FILE")
-SOURCE_REPO=$(yq '.sourceRepo // ""' "$METADATA_FILE")
-PRODUCT_ID=$(yq '.name' "$METADATA_FILE")
+# Read metadata — lives in <vX.X.X>/metadata.yaml
+METADATA_FILE="${PRODUCT_DIR}/${PRODUCT_VERSION}/metadata.yaml"
+[[ -f "$METADATA_FILE" ]] || { echo "ERROR: ${PRODUCT_VERSION}/metadata.yaml not found in ${PRODUCT_DIR}"; exit 1; }
+
+
+SOURCE_TYPE=$(yq '.spec.catalog.sourceType' "$METADATA_FILE")
+SOURCE_REPO="${OPT_CHART_REPO:-$(yq '.spec.catalog.sourceRepo // ""' "$METADATA_FILE")}"
+PRODUCT_ID="${OPT_PRODUCT_ID:-$(yq '.spec.catalog.name // ""' "$METADATA_FILE")}"
+[[ -z "$PRODUCT_ID" ]] && { echo "ERROR: no product id — pass --product-id or set spec.catalog.name"; exit 1; }
 # targetType controls where the chart is delivered; defaults to matching sourceType
-TARGET_TYPE=$(yq '.targetType // ""' "$METADATA_FILE")
+TARGET_TYPE=$(yq '.spec.catalog.targetType // ""' "$METADATA_FILE")
 [[ -z "$TARGET_TYPE" ]] && TARGET_TYPE="$SOURCE_TYPE"
 
-echo "    sourceType=${SOURCE_TYPE}  targetType=${TARGET_TYPE}  productId=${PRODUCT_ID}"
+echo "    version=${PRODUCT_VERSION}  sourceType=${SOURCE_TYPE}  targetType=${TARGET_TYPE}  productId=${PRODUCT_ID}"
 
 # ---------------------------------------------------------------------------
 # Step 2 — Acquire chart source into CHART_SRC (local directory)
 # ---------------------------------------------------------------------------
 
+SOURCE_CHART_TGZ=""
+
 if [[ "$SOURCE_TYPE" == "helm-registry" ]]; then
-  echo "==> Step 2: Pulling helm chart from registry ${SOURCE_REPO}"
+  [[ -z "$SOURCE_REPO" ]] && { echo "ERROR: no chart source — pass --chart-repo or set spec.catalog.sourceRepo"; exit 1; }
+  # Chart version: --chart-version > spec.catalog.sourceVersion > latest tag
+  SOURCE_VERSION="${OPT_CHART_VERSION:-$(yq '.spec.catalog.sourceVersion // ""' "$METADATA_FILE")}"
+  VERSION_ARGS=()
+  [[ -n "$SOURCE_VERSION" ]] && VERSION_ARGS=(--version "$SOURCE_VERSION")
+
+  echo "==> Step 2: Pulling helm chart from registry ${SOURCE_REPO} ${SOURCE_VERSION:+(version ${SOURCE_VERSION})}"
 
   CHART_DIR="${WORK_DIR}/chart"
-  mkdir -p "$CHART_DIR"
+  PULL_DIR="${WORK_DIR}/chart-pull"
+  mkdir -p "$CHART_DIR" "$PULL_DIR"
 
   # Login to source registry if credentials provided
   if [[ -n "${PRODUCT_SOURCE_KEY:-}" ]]; then
@@ -116,11 +191,24 @@ if [[ "$SOURCE_TYPE" == "helm-registry" ]]; then
       --password "${PRODUCT_SOURCE_KEY##*:}" 2>/dev/null || true
   fi
 
-  helm pull "$SOURCE_REPO" --untar --untardir "$CHART_DIR" || \
+  # Keep the original packaged chart so it can be mirrored byte-for-byte (same digest)
+  helm pull "$SOURCE_REPO" ${VERSION_ARGS[@]+"${VERSION_ARGS[@]}"} --destination "$PULL_DIR" || \
     { echo "ERROR: helm pull failed from ${SOURCE_REPO}"; exit 1; }
+  SOURCE_CHART_TGZ=$(find "$PULL_DIR" -maxdepth 1 -name '*.tgz' | head -1)
+  [[ -z "$SOURCE_CHART_TGZ" ]] && { echo "ERROR: no chart archive downloaded from ${SOURCE_REPO}"; exit 1; }
+  tar -xzf "$SOURCE_CHART_TGZ" -C "$CHART_DIR"
 
-  CHART_YAML=$(find "$CHART_DIR" -name "Chart.yaml" | head -1)
-  [[ -z "$CHART_YAML" ]] && { echo "ERROR: Chart.yaml not found after helm pull"; exit 1; }
+  # Find root application Chart.yaml, avoiding dependency library charts (e.g., charts/common)
+  CHART_YAML=""
+  while IFS= read -r f; do
+    CHART_TYPE=$(yq '.type // "application"' "$f" 2>/dev/null || echo "application")
+    if [[ "$CHART_TYPE" == "application" ]]; then
+      CHART_YAML="$f"
+      break
+    fi
+  done < <(find "$CHART_DIR" -name "Chart.yaml" | awk '{ print length, $0 }' | sort -n | cut -d" " -f2-)
+
+  [[ -z "$CHART_YAML" ]] && { echo "ERROR: Application Chart.yaml not found after helm pull"; exit 1; }
   CHART_SRC="$(dirname "$CHART_YAML")"
 
 elif [[ "$SOURCE_TYPE" == "helm-git" ]]; then
@@ -130,8 +218,8 @@ elif [[ "$SOURCE_TYPE" == "helm-git" ]]; then
     # Chart is bundled directly in the product directory
     CHART_SRC="${PRODUCT_DIR}/chart"
   else
-    SOURCE_BRANCH=$(yq '.sourceBranch // "main"' "$METADATA_FILE")
-    SOURCE_PATH=$(yq '.sourcePath' "$METADATA_FILE")
+    SOURCE_BRANCH=$(yq '.spec.catalog.sourceBranch // "main"' "$METADATA_FILE")
+    SOURCE_PATH=$(yq '.spec.catalog.sourcePath' "$METADATA_FILE")
     CHART_CLONE="${WORK_DIR}/chart-source"
 
     # Inject token into URL if PRODUCT_SOURCE_TOKEN is set
@@ -163,13 +251,18 @@ echo "    chart=${CHART_NAME}  version=${CHART_VERSION}"
 # ---------------------------------------------------------------------------
 
 if [[ "$TARGET_TYPE" == "helm-registry" ]]; then
-  echo "==> Step 3: Pushing helm chart to Quay registry"
-
   helm registry login "$QUAY_REGISTRY" --username "$QUAY_USERNAME" --password "$QUAY_PASSWORD" \
     --insecure
 
-  CHART_TGZ="${WORK_DIR}/${CHART_NAME}-${CHART_VERSION}.tgz"
-  helm package "$CHART_SRC" --destination "$WORK_DIR"
+  if [[ -n "$SOURCE_CHART_TGZ" ]]; then
+    # helm-registry -> helm-registry: mirror the upstream chart archive unchanged
+    echo "==> Step 3: Mirroring helm chart ${SOURCE_REPO}:${CHART_VERSION} to hub Quay"
+    CHART_TGZ="$SOURCE_CHART_TGZ"
+  else
+    echo "==> Step 3: Pushing helm chart to Quay registry"
+    CHART_TGZ="${WORK_DIR}/${CHART_NAME}-${CHART_VERSION}.tgz"
+    helm package "$CHART_SRC" --destination "$WORK_DIR"
+  fi
 
   helm push "$CHART_TGZ" \
     "oci://${QUAY_REGISTRY}/sovcloud/cp/sovereign-cloud-platform/byop/charts" \
@@ -212,8 +305,8 @@ fi
 # ---------------------------------------------------------------------------
 echo "==> Step 4: Mirroring images to Quay"
 
-# Images are defined inline in catalog/metadata.yaml
-IMAGE_COUNT=$(yq '.images | length' "$METADATA_FILE")
+# Images are defined inline in <version>/metadata.yaml
+IMAGE_COUNT=$(yq '.spec.catalog.images | length' "$METADATA_FILE")
 
 skopeo login "$QUAY_REGISTRY" --username "$QUAY_USERNAME" --password "$QUAY_PASSWORD" --tls-verify=false
 
@@ -224,8 +317,8 @@ else
 fi
 
 for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
-  SRC_IMAGE=$(yq ".images[${idx}].source" "$METADATA_FILE")
-  DEST_LINE=$(yq ".images[${idx}].destination" "$METADATA_FILE")
+  SRC_IMAGE=$(yq ".spec.catalog.images[${idx}].source" "$METADATA_FILE")
+  DEST_LINE=$(yq ".spec.catalog.images[${idx}].destination" "$METADATA_FILE")
 
   # Derive Quay destination from the canonical chart path (destination field)
   REGISTRY=$(echo "$DEST_LINE" | cut -d'/' -f1)
@@ -256,7 +349,7 @@ REGISTRATION_SCHEMA=$(base64 -i "$SCHEMA_FILE" | tr -d '\n')
 # Build imageMirrors block from metadata.yaml (destination field = canonical chart path)
 IMAGE_MIRRORS=""
 for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
-  DEST_LINE=$(yq ".images[${idx}].destination" "$METADATA_FILE")
+  DEST_LINE=$(yq ".spec.catalog.images[${idx}].destination" "$METADATA_FILE")
   REGISTRY=$(echo "$DEST_LINE" | cut -d'/' -f1)
   REMAINDER=$(echo "$DEST_LINE" | cut -d'/' -f2-)
   REPO_NO_TAG=$(echo "$REMAINDER" | cut -d':' -f1)
@@ -316,6 +409,42 @@ EOF
 echo "    Applying ${CR_FILE}"
 oc apply -f "$CR_FILE"
 
+# Apply cluster-scoped ImageTagMirrorSet and ImageDigestMirrorSet directly
+if [[ $IMAGE_COUNT -gt 0 ]]; then
+  echo "    Applying cluster ImageTagMirrorSet and ImageDigestMirrorSet for ${PRODUCT_ID}"
+
+  ITMS_ENTRIES=""
+  for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
+    DEST_LINE=$(yq ".spec.catalog.images[${idx}].destination" "$METADATA_FILE")
+    REGISTRY=$(echo "$DEST_LINE" | cut -d'/' -f1)
+    REMAINDER=$(echo "$DEST_LINE" | cut -d'/' -f2-)
+    REPO_NO_TAG=$(echo "$REMAINDER" | cut -d':' -f1)
+    MIRROR="${QUAY_REGISTRY}/sovcloud/${REGISTRY}-mirror/${REPO_NO_TAG}"
+    ITMS_ENTRIES="${ITMS_ENTRIES}
+    - source: ${REGISTRY}/${REPO_NO_TAG}
+      mirrors:
+        - ${MIRROR}"
+  done
+
+  ITMS_IDMS_FILE="${WORK_DIR}/itms-idms-${PRODUCT_ID}.yaml"
+  cat > "$ITMS_IDMS_FILE" <<EOF
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: byop-${PRODUCT_ID}-tag-mirrors
+spec:
+  imageTagMirrors:${ITMS_ENTRIES}
+---
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: byop-${PRODUCT_ID}-digest-mirrors
+spec:
+  imageDigestMirrors:${ITMS_ENTRIES}
+EOF
+  oc apply -f "$ITMS_IDMS_FILE" || echo "WARNING: Failed to apply ITMS/IDMS directly (cluster-scoped admin permissions may be required)"
+fi
+
 # ---------------------------------------------------------------------------
 # Step 6 — Ensure platform owner secret exists in byop-service-broker
 # ---------------------------------------------------------------------------
@@ -328,12 +457,53 @@ oc create secret generic byop-platform-owner-secret \
 echo "    byop-platform-owner-secret applied to namespace '${BYOP_NAMESPACE}'"
 
 # ---------------------------------------------------------------------------
-# Step 7 — Register TARGET_REPO with ArgoCD in openshift-gitops
+# Step 7 — Register chart source with ArgoCD in openshift-gitops
+#   helm-registry: ensure OCI helm repo-creds for the cluster's Quay exist
+#   helm-git:      register TARGET_REPO as a git repo
 # ---------------------------------------------------------------------------
+ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-openshift-gitops}"
+
+if [[ "$TARGET_TYPE" == "helm-registry" ]]; then
+  echo "==> Step 7: Ensuring ArgoCD OCI helm credentials for ${QUAY_REGISTRY}"
+
+  # Reuse any existing helm repo / repo-creds secret whose URL covers this Quay host
+  EXISTING_CREDS=""
+  for s in $(oc get secret -n "$ARGOCD_NAMESPACE" \
+      -l 'argocd.argoproj.io/secret-type in (repository,repo-creds)' -o name 2>/dev/null); do
+    S_URL=$(oc get "$s" -n "$ARGOCD_NAMESPACE" -o jsonpath='{.data.url}' | base64 -d 2>/dev/null || true)
+    S_URL="${S_URL#oci://}"
+    if [[ -n "$S_URL" && ( "$S_URL" == "$QUAY_REGISTRY" || "$S_URL" == "$QUAY_REGISTRY"/* ) ]]; then
+      EXISTING_CREDS="${s#secret/}"; break
+    fi
+  done
+
+  if [[ -n "$EXISTING_CREDS" ]]; then
+    echo "    Using existing ArgoCD secret '${EXISTING_CREDS}'"
+  else
+    ARGOCD_OCI_FILE="${WORK_DIR}/argocd-oci-creds.yaml"
+    cat > "$ARGOCD_OCI_FILE" <<ARGOEOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: byop-quay-oci-repo-creds
+  namespace: ${ARGOCD_NAMESPACE}
+  labels:
+    argocd.argoproj.io/secret-type: repo-creds
+stringData:
+  type: helm
+  enableOCI: "true"
+  url: ${QUAY_REGISTRY}
+  username: ${QUAY_USERNAME}
+  password: ${QUAY_PASSWORD}
+  insecure: "true"
+ARGOEOF
+    oc apply -f "$ARGOCD_OCI_FILE"
+    echo "    ArgoCD OCI repo-creds 'byop-quay-oci-repo-creds' applied to namespace '${ARGOCD_NAMESPACE}'"
+  fi
+else
 echo "==> Step 7: Registering GitOps repo with ArgoCD"
 
 ARGOCD_SECRET_NAME="argocd-repo-byop-gitops"
-ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-openshift-gitops}"
 
 # Build and apply the secret (HTTPS token-based)
 ARGOCD_SECRET_FILE="${WORK_DIR}/argocd-repo-secret.yaml"
@@ -354,6 +524,7 @@ ARGOEOF
 
 oc apply -f "$ARGOCD_SECRET_FILE"
 echo "    ArgoCD repo secret '${ARGOCD_SECRET_NAME}' applied to namespace '${ARGOCD_NAMESPACE}'"
+fi
 
 # ---------------------------------------------------------------------------
 # Step 8 — Ensure ACM placement resources exist in byop-service-broker
