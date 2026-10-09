@@ -7,7 +7,7 @@ metadata:
   shortDescription: "Enterprise-grade MongoDB document database deployed as an OCP Virt VirtualMachine on IBM Z (s390x) with support for standalone and high-availability replica set architectures."
   fullDescription: "MongoDB Enterprise Advanced deployed as an OpenShift Virtualization (OCP Virt) VirtualMachine on IBM Z architecture (s390x). Running on pre-baked enterprise Linux images with automated first-boot credential provisioning and cloud-init configuration, it delivers high performance NoSQL document storage for sovereign enterprise workloads. Supports single VM standalone deployments as well as multi-node Replica Sets with pod anti-affinity across s390x compute nodes."
   sovereignCoreRelevance: "Enables air-gapped, on-premises deployment of MongoDB Enterprise Advanced on IBM Z s390x virtualized infrastructure, ensuring confidential computing and data sovereignty within regulated environments."
-  category: "data"
+  category: "other"
   industries: ["government", "bfsi", "healthcare", "telco", "energy"]
   intendedUsers: ["Database administrators", "Application developers", "Platform engineers"]
   version: "8.3.2"
