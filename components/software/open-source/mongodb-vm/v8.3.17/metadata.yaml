@@ -42,6 +42,7 @@ spec:
     brokerType: "platform"
     sourceType: "helm-registry"
     sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
+    sourceVersion: "1.1.0"
     name: "mongodbvm"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
