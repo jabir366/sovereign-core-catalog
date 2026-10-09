@@ -1,7 +1,7 @@
 name: mongodb-vm
 display_name: MongoDB Enterprise Advanced VM
 description: MongoDB Enterprise Advanced 8.3.2 deployed as an OCP Virt VirtualMachine on IBM Z (s390x) with standalone and High Availability replica set plans
-category: databases
+category: other
 tags: [Database, NoSQL, DocumentDB, MongoDB, Enterprise]
 support_url: https://www.ibm.com
 marketing_url: https://www.ibm.com/products/sovereign-core
