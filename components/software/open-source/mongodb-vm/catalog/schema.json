@@ -167,61 +167,15 @@
             },
             "forwarding": {
               "type": "object",
-              "properties": {
-                "enabled": {
-                  "type": "boolean"
-                },
-                "host": {
-                  "type": "string"
-                },
-                "port": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 65535
-                },
-                "protocol": {
-                  "type": "string",
-                  "enum": ["tcp", "udp"]
-                },
-                "format": {
-                  "type": "string",
-                  "enum": ["rfc3164", "rfc5424", "json"]
-                }
-              }
+              "description": "Chart keys: enabled (bool), host, port (1-65535), protocol (tcp|udp), format (rfc3164|rfc5424|json)"
             },
             "fileMonitoring": {
               "type": "object",
-              "properties": {
-                "mongodLog": {
-                  "type": "object",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "auditLog": {
-                  "type": "object",
-                  "properties": {
-                    "enabled": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
+              "description": "Chart keys: mongodLog.enabled (bool), auditLog.enabled (bool)"
             },
             "rateLimit": {
               "type": "object",
-              "properties": {
-                "intervalSeconds": {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                "burstCount": {
-                  "type": "integer",
-                  "minimum": 1
-                }
-              }
+              "description": "Chart keys: intervalSeconds (>=0), burstCount (>=1)"
             },
             "customConf": {
               "type": "string"
