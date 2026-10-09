@@ -1,6 +1,6 @@
 display_name: MongoDB Enterprise Advanced VM s390x
 description: MongoDB Enterprise Advanced 8.3.17 deployed as an OCP Virt VirtualMachine on IBM Z (s390x), supporting standalone and 3-member Replica Set HA deployments
-category: databases
+category: other
 tags: [Database, MongoDB, Enterprise, s390x, VM]
 support_url: https://www.ibm.com
 marketing_url: https://www.ibm.com/products/sovereign-core
