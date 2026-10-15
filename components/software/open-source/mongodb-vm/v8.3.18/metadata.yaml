@@ -10,7 +10,7 @@ metadata:
   category: "data"
   industries: ["government", "bfsi", "healthcare", "telco", "energy"]
   intendedUsers: ["Database administrators", "Application developers", "Platform engineers"]
-  version: "8.3.17"
+  version: "8.3.26"
   lifecycleStatus: "approved"
   storefrontVisibility: "public"
   availabilityState: "available_central_it"
@@ -22,7 +22,7 @@ spec:
     enabled: false
     license: "SSPL-1.0"
     upstreamProject: "https://github.com/mongodb/mongo"
-    upstreamVersion: "8.3.17"
+    upstreamVersion: "8.3.26"
   architecture:
     format: "VM"
     airgapReady: true
@@ -42,8 +42,11 @@ spec:
     brokerType: "platform"
     sourceType: "helm-registry"
     sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
-    sourceVersion: "1.1.1"
+    sourceVersion: "1.1.2"
     name: "mongodbvm"
+    images:
+      - source: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.26-s390x"
+        destination: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.26-s390x"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
