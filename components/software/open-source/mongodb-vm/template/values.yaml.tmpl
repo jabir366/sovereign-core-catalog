@@ -1,0 +1,70 @@
+# Helm values template for MongoDB Enterprise Advanced VM (s390x)
+# Rendered by the BYOP broker at deployment time.
+# Schema: catalog/schema.json  (flat dot-notation keys)
+
+nameOverride: "{{ instanceName }}"
+namespaceOverride: "{{ namespace }}"
+
+## Boot disk — CDI DataVolume source
+diskImage:
+  sourceContainerDisk: "{{ diskImage.sourceContainerDisk }}"
+{% if diskImage.pullSecret is defined and diskImage.pullSecret %}
+  pullSecret: "{{ diskImage.pullSecret }}"
+{% endif %}
+{% if diskImage.certConfigMap is defined and diskImage.certConfigMap %}
+  certConfigMap: "{{ diskImage.certConfigMap }}"
+{% endif %}
+  storageClassName: "{{ diskImage.storageClassName | default('ocs-storagecluster-ceph-rbd-virtualization') }}"
+  diskSizeGi: {{ diskImage.diskSizeGi | default(25) }}
+
+## VM sizing
+vm:
+  cpuCores: {{ vm.cpuCores | default(2) }}
+  memoryGi: {{ vm.memoryGi | default(4) }}
+
+## MongoDB credentials + database
+mongodb:
+  databaseName: "{{ mongodb.databaseName }}"
+  databaseUser: "{{ mongodb.databaseUser }}"
+
+## Replica Set / HA
+ha:
+  enabled: {{ ha.enabled | default(false) }}
+  replicaCount: {{ ha.replicaCount | default(3) }}
+  replicaSetName: "{{ ha.replicaSetName | default('rs0') }}"
+
+## VIP / LoadBalancer (probe-gated primary endpoint)
+vip:
+  enabled: {{ vip.enabled | default(false) }}
+  lb_type: "{{ vip.lb_type | default('local') }}"
+  nodePort: {{ vip.nodePort | default(0) }}
+{% if vip.metallbAddressPool is defined and vip.metallbAddressPool %}
+  metallbAddressPool: "{{ vip.metallbAddressPool }}"
+{% endif %}
+
+## NetworkPolicy
+networkPolicy:
+  enabled: {{ networkPolicy.enabled | default(true) }}
+
+## ServiceAccount + RBAC
+serviceAccount:
+  enabled: {{ serviceAccount.enabled | default(true) }}
+
+## Compliance — mongod.conf hardening (Phase 2)
+compliance:
+  enableEncryption: {{ compliance.enableEncryption | default(false) }}
+  auditLog:
+    enabled: {{ compliance.auditLog.enabled | default(false) }}
+    path: "{{ compliance.auditLog.path | default('/var/log/mongodb/audit.json') }}"
+    auditAuthorizationSuccess: {{ compliance.auditLog.auditAuthorizationSuccess | default(true) }}
+
+## Logging — rsyslog forwarding
+logging:
+  rsyslog:
+    enabled: {{ logging.rsyslog.enabled | default(false) }}
+    forwarding:
+      enabled: {{ logging.rsyslog.forwarding.enabled | default(false) }}
+      host: "{{ logging.rsyslog.forwarding.host | default('') }}"
+      port: {{ logging.rsyslog.forwarding.port | default(514) }}
+      protocol: "{{ logging.rsyslog.forwarding.protocol | default('tcp') }}"
+      format: "{{ logging.rsyslog.forwarding.format | default('rfc5424') }}"
