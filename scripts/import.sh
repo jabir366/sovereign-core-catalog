@@ -331,6 +331,7 @@ for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
   # shellcheck disable=SC2086
   skopeo copy --all \
     $SRC_CREDS \
+    --src-tls-verify=false \
     --dest-tls-verify=false \
     "docker://${SRC_IMAGE}" \
     "docker://${DEST_IMAGE}"
