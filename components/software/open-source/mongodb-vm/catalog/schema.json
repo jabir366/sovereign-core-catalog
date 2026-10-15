@@ -2,41 +2,41 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "clusterTarget":                        {"type": "string",  "description": "Target cluster name", "pattern": "^[a-zA-Z][a-zA-Z0-9-]*$"},
-    "namespace":                            {"type": "string",  "description": "Kubernetes namespace to deploy into", "default": "mongodb-vm"},
-    "instanceName":                         {"type": "string",  "description": "Helm release name and VM name prefix", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "clusterTarget":                   {"type": "string",  "pattern": "^[a-zA-Z][a-zA-Z0-9-]*$"},
+    "namespace":                       {"type": "string",  "default": "mongodb-vm"},
+    "instanceName":                    {"type": "string",  "pattern": "^[a-z0-9][a-z0-9-]*$"},
 
-    "diskImage.sourceContainerDisk":        {"type": "string",  "description": "ContainerDisk image reference (registry/repo:tag)"},
-    "diskImage.pullSecret":                 {"type": "string",  "description": "Secret name for CDI registry credentials", "default": ""},
-    "diskImage.certConfigMap":              {"type": "string",  "description": "ConfigMap name for registry CA certificate", "default": ""},
-    "diskImage.storageClassName":           {"type": "string",  "description": "StorageClass for the VM boot PVC", "default": "ocs-storagecluster-ceph-rbd-virtualization"},
-    "diskImage.diskSizeGi":                 {"type": "integer", "description": "Boot disk size in GiB", "default": 25},
+    "diskImage.sourceContainerDisk":   {"type": "string"},
+    "diskImage.pullSecret":            {"type": "string",  "default": ""},
+    "diskImage.certConfigMap":         {"type": "string",  "default": ""},
+    "diskImage.storageClassName":      {"type": "string",  "default": "ocs-storagecluster-ceph-rbd-virtualization"},
+    "diskImage.diskSizeGi":            {"type": "integer", "default": 25},
 
-    "vm.cpuCores":                          {"type": "integer", "description": "vCPU cores per VM", "default": 2},
-    "vm.memoryGi":                          {"type": "integer", "description": "Memory in GiB per VM", "default": 4},
+    "vm.cpuCores":                     {"type": "integer", "default": 2},
+    "vm.memoryGi":                     {"type": "integer", "default": 4},
 
-    "mongodb.databaseName":                 {"type": "string",  "description": "Application database name", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
-    "mongodb.databaseUser":                 {"type": "string",  "description": "Application database username", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
+    "mongodb.databaseName":            {"type": "string",  "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
+    "mongodb.databaseUser":            {"type": "string",  "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
 
-    "ha.enabled":                           {"type": "boolean", "description": "Enable Replica Set HA mode", "default": false},
-    "ha.replicaCount":                      {"type": "integer", "description": "Number of Replica Set members (odd, min 3)", "default": 3},
-    "ha.replicaSetName":                    {"type": "string",  "description": "MongoDB Replica Set name", "default": "rs0"},
+    "ha.enabled":                      {"type": "boolean", "default": false},
+    "ha.replicaCount":                 {"type": "integer", "default": 3},
+    "ha.replicaSetName":               {"type": "string",  "default": "rs0"},
 
-    "vip.enabled":                          {"type": "boolean", "description": "Enable primary-only VIP Service (requires ha.enabled)", "default": false},
-    "vip.lb_type":                          {"type": "string",  "description": "VIP type: local (NodePort) or external (LoadBalancer)", "default": "local"},
-    "vip.nodePort":                         {"type": "integer", "description": "NodePort for VIP in local mode (0 = auto)", "default": 0},
-    "vip.metallbAddressPool":               {"type": "string",  "description": "MetalLB IPAddressPool name (external mode only)", "default": ""},
+    "vip.enabled":                     {"type": "boolean", "default": false},
+    "vip.lb_type":                     {"type": "string",  "default": "local"},
+    "vip.nodePort":                    {"type": "integer", "default": 0},
+    "vip.metallbAddressPool":          {"type": "string",  "default": ""},
 
-    "networkPolicy.enabled":                {"type": "boolean", "description": "Create NetworkPolicy for MongoDB ingress/egress", "default": true},
-    "serviceAccount.enabled":               {"type": "boolean", "description": "Create dedicated ServiceAccount + RBAC", "default": true},
+    "networkPolicy.enabled":           {"type": "boolean", "default": true},
+    "serviceAccount.enabled":          {"type": "boolean", "default": true},
 
-    "compliance.enableEncryption":          {"type": "boolean", "description": "Enable WiredTiger encryption-at-rest", "default": false},
-    "compliance.auditLog.enabled":          {"type": "boolean", "description": "Enable MongoDB audit log in mongod.conf", "default": false},
-    "compliance.auditLog.path":             {"type": "string",  "description": "Audit log path inside the VM", "default": "/var/log/mongodb/audit.json"},
+    "compliance.enableEncryption":     {"type": "boolean", "default": false},
+    "compliance.auditLog.enabled":     {"type": "boolean", "default": false},
+    "compliance.auditLog.path":        {"type": "string",  "default": "/var/log/mongodb/audit.json"},
 
-    "logging.rsyslog.enabled":              {"type": "boolean", "description": "Enable rsyslog forwarding config", "default": false},
-    "logging.rsyslog.forwarding.host":      {"type": "string",  "description": "Remote syslog server hostname or IP", "default": ""},
-    "logging.rsyslog.forwarding.port":      {"type": "integer", "description": "Remote syslog server port", "default": 514}
+    "logging.rsyslog.enabled":         {"type": "boolean", "default": false},
+    "logging.rsyslog.forwarding.host": {"type": "string",  "default": ""},
+    "logging.rsyslog.forwarding.port": {"type": "integer", "default": 514}
   },
   "required": [
     "clusterTarget",
