@@ -2,150 +2,53 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "instanceName": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9\\-]*$"
-    },
-    "clusterTarget": {
-      "type": "string"
-    },
-    "namespace": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9\\-]*$"
-    },
-    "instance": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9\\-]*$"
-        }
-      }
-    },
-    "diskImage": {
-      "type": "object",
-      "properties": {
-        "sourceContainerDisk": {
-          "type": "string",
-          "minLength": 1
-        },
-        "pullSecret": {
-          "type": "string"
-        },
-        "certConfigMap": {
-          "type": "string"
-        },
-        "storageClassName": {
-          "type": "string"
-        },
-        "diskSizeGi": {
-          "type": "integer",
-          "minimum": 20,
-          "maximum": 500
-        }
-      },
-      "required": [
-        "sourceContainerDisk"
-      ]
-    },
-    "vm": {
-      "type": "object",
-      "properties": {
-        "cpuCores": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 16
-        },
-        "memoryGi": {
-          "type": "integer",
-          "minimum": 2,
-          "maximum": 64
-        }
-      }
-    },
-    "mongodb": {
-      "type": "object",
-      "properties": {
-        "databaseName": {
-          "type": "string",
-          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
-        },
-        "databaseUser": {
-          "type": "string",
-          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
-        }
-      },
-      "required": [
-        "databaseName",
-        "databaseUser"
-      ]
-    },
-    "ha": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "replicaCount": {
-          "type": "integer",
-          "minimum": 3,
-          "maximum": 7
-        },
-        "replicaSetName": {
-          "type": "string",
-          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
-        }
-      },
-      "required": [
-        "enabled"
-      ]
-    },
-    "vip": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "lb_type": {
-          "type": "string",
-          "enum": [
-            "local",
-            "external"
-          ]
-        },
-        "nodePort": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 32767
-        },
-        "metallbAddressPool": {
-          "type": "string"
-        }
-      }
-    },
-    "networkPolicy": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      }
-    },
-    "serviceAccount": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      }
-    }
+    "clusterTarget":                        {"type": "string",  "description": "Target cluster name — must match an existing cluster in Sovereign Core", "pattern": "^[a-zA-Z][a-zA-Z0-9-]*$"},
+    "namespace":                            {"type": "string",  "description": "Kubernetes namespace to deploy into", "pattern": "^[a-z0-9][a-z0-9-]*$", "minLength": 1, "maxLength": 64, "default": "mongodb-vm"},
+    "instanceName":                         {"type": "string",  "description": "Name for the MongoDB instance — used as Helm release name and VM name prefix", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+
+    "diskImage.sourceContainerDisk":        {"type": "string",  "description": "ContainerDisk image reference (registry/repo:tag). Built by securedimage/build.sh PUSH_CONTAINERDISK=true.", "minLength": 1},
+    "diskImage.pullSecret":                 {"type": "string",  "description": "Secret name in the namespace containing registry credentials for CDI image import (keys: accessKeyId, secretKey). Leave empty for unauthenticated registries.", "default": ""},
+    "diskImage.certConfigMap":              {"type": "string",  "description": "ConfigMap name in the namespace containing the registry CA certificate (key: ca.crt). Leave empty to use cluster-wide trust bundle.", "default": ""},
+    "diskImage.storageClassName":           {"type": "string",  "description": "StorageClass for the VM boot PVC. Use ocs-storagecluster-ceph-rbd-encrypted for compliance (mdb-enc-05).", "default": "ocs-storagecluster-ceph-rbd-virtualization"},
+    "diskImage.diskSizeGi":                 {"type": "integer", "description": "Boot disk size in GiB", "default": 25, "minimum": 20, "maximum": 500},
+
+    "vm.cpuCores":                          {"type": "integer", "description": "Number of vCPU cores allocated to each MongoDB VM", "default": 2, "minimum": 1, "maximum": 16},
+    "vm.memoryGi":                          {"type": "integer", "description": "Memory in GiB allocated to each MongoDB VM", "default": 4, "minimum": 2, "maximum": 64},
+
+    "mongodb.databaseName":                 {"type": "string",  "description": "Name of the application database to create", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
+    "mongodb.databaseUser":                 {"type": "string",  "description": "Application database username", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
+
+    "ha.enabled":                           {"type": "boolean", "description": "Enable Replica Set HA mode. When true, replicaCount VMs are created and joined into a Replica Set.", "default": false},
+    "ha.replicaCount":                      {"type": "integer", "description": "Number of Replica Set members. Must be odd (3 or 5 recommended). Only used when ha.enabled=true.", "default": 3, "minimum": 3, "maximum": 7},
+    "ha.replicaSetName":                    {"type": "string",  "description": "MongoDB Replica Set name. Must match across all members.", "default": "rs0", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"},
+
+    "vip.enabled":                          {"type": "boolean", "description": "Enable a VIP Service that routes only to the current RS primary (probe-gated). Requires ha.enabled=true.", "default": false},
+    "vip.lb_type":                          {"type": "string",  "description": "VIP Service type: local (NodePort, dev/test) or external (LoadBalancer via MetalLB, production)", "default": "local", "enum": ["local", "external"]},
+    "vip.nodePort":                         {"type": "integer", "description": "NodePort for VIP in local mode (30000-32767). Set 0 to auto-assign.", "default": 0, "minimum": 0, "maximum": 32767},
+    "vip.metallbAddressPool":               {"type": "string",  "description": "MetalLB IPAddressPool name. Required when vip.lb_type=external.", "default": ""},
+
+    "networkPolicy.enabled":                {"type": "boolean", "description": "Create a NetworkPolicy restricting MongoDB ingress/egress (mdb-net-02, mdb-net-04). Disable only if the cluster manages NetworkPolicies externally.", "default": true},
+    "serviceAccount.enabled":               {"type": "boolean", "description": "Create a dedicated ServiceAccount + Role + RoleBinding for the MongoDB VM workload (mdb-rbac-03). Disable only if the namespace already provides a compliant dedicated SA.", "default": true},
+
+    "compliance.enableEncryption":          {"type": "boolean", "description": "Enable WiredTiger encryption-at-rest in mongod.conf (mdb-enc-02). Requires MongoDB Enterprise Advanced licence. Pair with diskImage.storageClassName=ocs-*-encrypted for full coverage.", "default": false},
+    "compliance.auditLog.enabled":          {"type": "boolean", "description": "Append auditLog block to mongod.conf at first-boot (mdb-aud-01, mdb-aud-02). Logs all auth decisions to compliance.auditLog.path.", "default": false},
+    "compliance.auditLog.path":             {"type": "string",  "description": "Filesystem path inside the VM for the JSON audit log.", "default": "/var/log/mongodb/audit.json"},
+    "compliance.auditLog.auditAuthorizationSuccess": {"type": "boolean", "description": "Log all auth decisions including successes (required for mdb-aud-02).", "default": true},
+
+    "logging.rsyslog.enabled":              {"type": "boolean", "description": "Write /etc/rsyslog.d/60-mongodb.conf and restart rsyslog at first-boot to enable log forwarding and file monitoring.", "default": false},
+    "logging.rsyslog.forwarding.enabled":   {"type": "boolean", "description": "Forward MongoDB log lines to a remote syslog server over TCP/UDP.", "default": false},
+    "logging.rsyslog.forwarding.host":      {"type": "string",  "description": "Remote syslog server hostname or IP.", "default": ""},
+    "logging.rsyslog.forwarding.port":      {"type": "integer", "description": "Remote syslog server port.", "default": 514},
+    "logging.rsyslog.forwarding.protocol":  {"type": "string",  "description": "Transport protocol for syslog forwarding.", "default": "tcp", "enum": ["tcp", "udp"]},
+    "logging.rsyslog.forwarding.format":    {"type": "string",  "description": "Wire format for syslog messages.", "default": "rfc5424", "enum": ["rfc3164", "rfc5424", "json"]}
   },
   "required": [
-    "instanceName",
     "clusterTarget",
     "namespace",
-    "diskImage",
-    "mongodb",
-    "ha"
+    "instanceName",
+    "diskImage.sourceContainerDisk",
+    "mongodb.databaseName",
+    "mongodb.databaseUser",
+    "ha.enabled"
   ]
 }
