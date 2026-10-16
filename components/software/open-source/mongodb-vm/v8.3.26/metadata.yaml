@@ -42,7 +42,7 @@ spec:
     brokerType: "platform"
     sourceType: "helm-registry"
     sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
-    sourceVersion: "1.1.3"
+    sourceVersion: "1.1.4"
     name: "mongodbvm"
     images:
       - source: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.26-s390x"
