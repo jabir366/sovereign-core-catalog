@@ -46,7 +46,7 @@ spec:
     name: "mongodbvm"
     images:
       - source: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/sovcloud/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.29-s390x"
-        destination: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/sovcloud/registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com-mirror/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.29-s390x"
+        destination: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/sovcloud/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.29-s390x"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
