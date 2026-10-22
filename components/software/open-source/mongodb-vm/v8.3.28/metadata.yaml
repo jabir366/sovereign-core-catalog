@@ -42,11 +42,11 @@ spec:
     brokerType: "platform"
     sourceType: "helm-registry"
     sourceRepo: "oci://quay.io/mongodbhelm/mongodb-vm"
-    sourceVersion: "1.1.6"
+    sourceVersion: "1.1.7"
     name: "mongodbvm"
     images:
-      - source: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/sovcloud/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.31-s390x"
-        destination: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.31-s390x"
+      - source: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/sovcloud/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.37-s390x"
+        destination: "registry-quay-quay-enterprise.apps.scr-x86.cp.fyre.ibm.com/mongo-ea-bootc/mongodb-ea-bootc-containerdisk:8.3.2.37-s390x"
   links:
     docsUrl: "https://www.mongodb.com/docs/manual/"
     productPageUrl: "https://www.mongodb.com/products/self-managed/enterprise-advanced"
