@@ -220,7 +220,13 @@ elif [[ "$SOURCE_TYPE" == "helm-registry" ]]; then
       --password "${PRODUCT_SOURCE_KEY##*:}" 2>/dev/null || true
   fi
 
-  helm pull "$SOURCE_REPO" --untar --untardir "$CHART_DIR" --insecure-skip-tls-verify || \
+  # Pin the chart version from metadata (spec.catalog.sourceVersion); without it
+  # helm pulls whatever the registry returns as latest.
+  SOURCE_VERSION=$(yq '.spec.catalog.sourceVersion // ""' "$METADATA_FILE")
+  VERSION_ARGS=()
+  [[ -n "$SOURCE_VERSION" ]] && VERSION_ARGS=(--version "$SOURCE_VERSION")
+
+  helm pull "$SOURCE_REPO" ${VERSION_ARGS[@]+"${VERSION_ARGS[@]}"} --untar --untardir "$CHART_DIR" --insecure-skip-tls-verify || \
     { echo "ERROR: helm pull failed from ${SOURCE_REPO}"; exit 1; }
 
   # Find root application Chart.yaml, avoiding dependency library charts (e.g., charts/common)
@@ -384,11 +390,12 @@ for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
 
   if [[ "$DRY_RUN" == "true" ]]; then
     # shellcheck disable=SC2086
-    echo "    [DRY RUN] skopeo copy --all ${SRC_CREDS} --dest-tls-verify=false docker://${SRC_IMAGE} docker://${DEST_IMAGE}"
+    echo "    [DRY RUN] skopeo copy --all ${SRC_CREDS} --src-tls-verify=false --dest-tls-verify=false docker://${SRC_IMAGE} docker://${DEST_IMAGE}"
   else
     # shellcheck disable=SC2086
     skopeo copy --all \
       $SRC_CREDS \
+      --src-tls-verify=false \
       --dest-tls-verify=false \
       "docker://${SRC_IMAGE}" \
       "docker://${DEST_IMAGE}"
@@ -412,7 +419,7 @@ REGISTRATION_SCHEMA=$(base64 -i "$SCHEMA_FILE" | tr -d '\n')
 # Build imageMirrors block from metadata.yaml (destination field = canonical chart path)
 IMAGE_MIRRORS=""
 for (( idx=0; idx<IMAGE_COUNT; idx++ )); do
-  DEST_LINE=$(yq ".images[${idx}].destination" "$METADATA_FILE")
+  DEST_LINE=$(yq ".spec.catalog.images[${idx}].destination" "$METADATA_FILE")
   REGISTRY=$(echo "$DEST_LINE" | cut -d'/' -f1)
   REMAINDER=$(echo "$DEST_LINE" | cut -d'/' -f2-)
   REPO_NO_TAG=$(echo "$REMAINDER" | cut -d':' -f1)
